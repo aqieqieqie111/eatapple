@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -42,7 +43,7 @@ model CheckIn {
   userId    String
   teamId    String
   date      String
-  photoUrl  String
+  photoData String   // base64 encoded image
   note      String?
   checkedAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -21,7 +21,7 @@ export interface MemberStatus {
   status: "checked" | "waiting" | "missed";
   checkIn: {
     id: string;
-    photoUrl: string;
+    photoData: string;
     note: string | null;
     checkedAt: string;
   } | null;
@@ -107,15 +107,11 @@ export async function joinTeam(inviteCode: string) {
 }
 
 // Check-in
-export async function submitCheckIn(teamId: string, photo: File, note?: string) {
-  const formData = new FormData();
-  formData.append("teamId", teamId);
-  formData.append("photo", photo);
-  if (note) formData.append("note", note);
-
+export async function submitCheckIn(teamId: string, photoData: string, note?: string) {
   return request("/api/checkin", {
     method: "POST",
-    body: formData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ teamId, photoData, note }),
   });
 }
 

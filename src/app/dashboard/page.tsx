@@ -266,7 +266,7 @@ export default function DashboardPage() {
                   <div className="aspect-square bg-gray-100 relative">
                     {member.checkIn ? (
                       <img
-                        src={member.checkIn.photoUrl}
+                        src={member.checkIn.photoData}
                         alt={`${member.userName}的打卡照片`}
                         className="w-full h-full object-cover"
                       />

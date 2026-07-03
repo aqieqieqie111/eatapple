@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         checkIn: checkIn
           ? {
               id: checkIn.id,
-              photoUrl: checkIn.photoUrl,
+              photoData: checkIn.photoData,
               note: checkIn.note,
               checkedAt: checkIn.checkedAt.toISOString(),
             }

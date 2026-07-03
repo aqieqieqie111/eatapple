@@ -4,6 +4,41 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getMe, getTeams, submitCheckIn, User, Team } from "@/lib/api";
 
+// Compress image to base64, max ~300KB
+async function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas not supported"));
+        ctx.drawImage(img, 0, 0, width, height);
+        let q = quality;
+        let dataUrl = canvas.toDataURL("image/jpeg", q);
+        // Further compress if still too large (>400KB)
+        while (dataUrl.length > 400 * 1024 && q > 0.3) {
+          q -= 0.1;
+          dataUrl = canvas.toDataURL("image/jpeg", q);
+        }
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("图片加载失败"));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("文件读取失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function UploadForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -13,9 +48,11 @@ function UploadForm() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState(teamIdParam);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [photoData, setPhotoData] = useState<string>("");
   const [preview, setPreview] = useState<string>("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +80,7 @@ function UploadForm() {
     init();
   }, [router, selectedTeamId]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -61,11 +98,22 @@ function UploadForm() {
     setError("");
     setPhoto(file);
     setPreview(URL.createObjectURL(file));
+
+    // Compress image
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      setPhotoData(compressed);
+    } catch {
+      setError("图片处理失败，请换一张试试");
+    } finally {
+      setCompressing(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!photo || !selectedTeamId) {
+    if (!photoData || !selectedTeamId) {
       setError("请选择团队并上传照片");
       return;
     }
@@ -74,7 +122,7 @@ function UploadForm() {
     setError("");
 
     try {
-      await submitCheckIn(selectedTeamId, photo, note || undefined);
+      await submitCheckIn(selectedTeamId, photoData, note || undefined);
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard");
@@ -149,10 +197,16 @@ function UploadForm() {
                   alt="预览"
                   className="w-full h-full object-cover"
                 />
+                {compressing && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-white text-sm">处理中...</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => {
                     setPhoto(null);
+                    setPhotoData("");
                     setPreview("");
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
@@ -206,10 +260,10 @@ function UploadForm() {
 
           <button
             type="submit"
-            disabled={loading || !photo}
+            disabled={loading || !photoData || compressing}
             className="w-full py-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-bold rounded-xl transition-colors text-lg"
           >
-            {loading ? "上传中..." : "✅ 确认打卡"}
+            {loading ? "上传中..." : compressing ? "处理图片..." : "✅ 确认打卡"}
           </button>
         </form>
       </main>

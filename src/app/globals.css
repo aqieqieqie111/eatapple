@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --color-apple-red: #e74c3c;
+  --color-apple-green: #2ecc71;
+  --color-apple-yellow: #f39c12;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}

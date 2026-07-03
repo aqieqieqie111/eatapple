@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "bcryptjs"],
 };
 
 export default nextConfig;

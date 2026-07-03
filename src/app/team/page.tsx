@@ -16,6 +16,7 @@ export default function TeamPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function loadTeams() {
     try {
@@ -131,10 +132,17 @@ export default function TeamPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-400">邀请码</div>
-                      <div className="font-mono text-sm font-medium text-red-500 select-all">
-                        {team.inviteCode.slice(0, 8)}
-                      </div>
+                      <div className="text-xs text-gray-400 mb-1">邀请码（点击复制）</div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(team.inviteCode);
+                          setCopiedId(team.id);
+                          setTimeout(() => setCopiedId(null), 2000);
+                        }}
+                        className="font-mono text-sm font-medium text-red-500 select-all bg-red-50 px-2 py-1 rounded hover:bg-red-100 transition cursor-pointer"
+                      >
+                        {copiedId === team.id ? "✅ 已复制" : team.inviteCode}
+                      </button>
                     </div>
                   </div>
                 </div>
